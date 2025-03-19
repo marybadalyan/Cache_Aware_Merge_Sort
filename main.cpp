@@ -5,8 +5,9 @@
 #include "kaizen.h"
 using CacheDetector::CHUNK_SIZE;
 
-//TODO:Implement chunk sort to not incerement the size of subvectors that ...
-//... need to be merged do it with fewloops to so all of those chunks can fit into cache
+//TODO: 1: Implement chunk sort to not increment the size of subvectors that ...
+//... need to be merged [do it with pairs]
+//TODO: 2: Add run for git hub actions yaml file
 int process_args(int argc, char* argv[]) {
     zen::print("The cache is " ,CHUNK_SIZE,"KB",'\n');
     zen::cmd_args args(argv, argc);
