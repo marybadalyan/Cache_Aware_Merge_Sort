@@ -86,7 +86,8 @@ int main(int argc, char* argv[]) {
         data[i] = zen::random_int(0,size);
     }
     timer.start();
-    merge_sort(data, 0, data.size() - 1, std::vector<int>(data.size()));
+    std::vector<int> temp(data.size());
+    merge_sort(data, 0, data.size() - 1, temp);
     timer.stop();
     std::cout << "Standard Merge Sort Time: " << timer.duration_string() << std::endl;
 
