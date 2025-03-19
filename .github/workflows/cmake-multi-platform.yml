@@ -70,12 +70,6 @@ jobs:
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: ctest --build-config ${{ matrix.build_type }}
 
-  run_executable:
-    runs-on: ${{ matrix.os }}  # Inherits the OS matrix from the build job
-    needs: test  # Ensure that executable run only happens after tests are completed
-    steps:
-    - uses: actions/checkout@v4
-
     - name: Set reusable strings
       id: strings
       shell: bash
