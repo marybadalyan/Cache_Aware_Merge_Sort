@@ -5,21 +5,19 @@
 #include "kaizen.h"
 using CacheDetector::CHUNK_SIZE;
 
-
+//TODO:Implement chunk sort to not incerement the size of subvectors that ...
+//... need to be merged do it with fewloops to so all of those chunks can fit into cache
 int process_args(int argc, char* argv[]) {
     zen::print("The cache is " ,CHUNK_SIZE,"KB",'\n');
-    if (argc < 2) {
-        std::cout << "Error: --size argument is absent, using default 1000!" << std::endl;
-        return 50000; // Default size
+    zen::cmd_args args(argv, argc);
+
+    auto size_options = args.get_options("--size");
+
+    if (size_options.empty()) {
+        zen::log("Error: --size argument is absent, using default 500!");
+        return 500;
     }
-    for (int i = 1; i < argc; ++i) {
-        if (std::string(argv[i]) == "--size") {
-            if (i + 1 < argc) {
-                return std::atoi(argv[i + 1]); // Convert KB to number of integers
-            }
-        }
-    }
-    return 50000;
+    return std::stoi(size_options[0]);
 }
 
 void merge_sort(std::vector<int>& v, int left, int right, std::vector<int>& temp) {
@@ -60,12 +58,12 @@ void chunk_sort(std::vector<int>& v) {
                 std::copy(temp.begin() + i, temp.begin() + right_end + 1, v.begin() + i);
             }
         }
-        size *= 2;
+        size *= 2; //incerement the size of the chunks to be merged 
     }
 }
 
 int main(int argc, char* argv[]) {
-    int size = process_args(argc, argv); // Convert KB to number of integers
+    int size = process_args(argc, argv); 
     zen::timer timer;
 
 
