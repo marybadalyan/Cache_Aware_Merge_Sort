@@ -1,43 +1,26 @@
 #include <iostream>
 #include <vector>
-#include <algorithm>  // for std::merge and std::min
-#include <chrono>     // for high_resolution_clock
-#include <malloc.h>   // for _aligned_malloc and _aligned_free
-#include "cache_size.h"
+#include <algorithm>  
+#include "cache_size.h" 
+#include "kaizen.h"
+using CacheDetector::CHUNK_SIZE;
 
-using cache_utils::CHUNK_SIZE;
 
 int process_args(int argc, char* argv[]) {
+    zen::print("The cache is " ,CHUNK_SIZE,"KB",'\n');
     if (argc < 2) {
         std::cout << "Error: --size argument is absent, using default 1000!" << std::endl;
-        return 1000;
+        return 50000000; // Default size
     }
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "--size") {
             if (i + 1 < argc) {
-                return std::atoi(argv[i + 1]);
+                return std::atoi(argv[i + 1]); // Convert KB to number of integers
             }
         }
     }
-    return 1000;
+    return 50000000;
 }
-
-// Custom timer class using high_resolution_clock
-class Timer {
-public:
-    void start() {
-        start_time = std::chrono::high_resolution_clock::now();
-    }
-    void stop() {
-        end_time = std::chrono::high_resolution_clock::now();
-    }
-    long long duration_ms() const {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-    }
-
-private:
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_time, end_time;
-};
 
 void merge_sort(std::vector<int>& v, int left, int right, std::vector<int>& temp) {
     if (left >= right) return;
@@ -55,20 +38,21 @@ void merge_sort(std::vector<int>& v, int left, int right, std::vector<int>& temp
 
 void chunk_sort(std::vector<int>& v) {
     int n = v.size();
+    int chunk_size = ((CHUNK_SIZE * 1024)/sizeof(int))/2; 
     std::vector<int> temp(n);
 
     // Sort each chunk independently
-    for (int i = 0; i < n; i += CHUNK_SIZE) {
-        int end = std::min(i + CHUNK_SIZE - 1, n - 1);
+    for (int i = 0; i < n; i += chunk_size) {
+        int end =std::min(static_cast<int>(i + chunk_size - 1), n - 1); 
         merge_sort(v, i, end, temp);
     }
 
     // Merge sorted chunks iteratively
-    int size = CHUNK_SIZE;
+    int size = chunk_size;
     while (size < n) {
         for (int i = 0; i < n; i += 2 * size) {
-            int mid = std::min(i + size - 1, n - 1);
-            int right_end = std::min(i + 2 * size - 1, n - 1);
+            int mid = std::min(i + size - 1, n - 1);    
+            int right_end = std::min(i + 2 * size - 1, n - 1); 
             if (mid < right_end) {
                 std::merge(v.begin() + i, v.begin() + mid + 1,
                            v.begin() + mid + 1, v.begin() + right_end + 1,
@@ -81,38 +65,33 @@ void chunk_sort(std::vector<int>& v) {
 }
 
 int main(int argc, char* argv[]) {
-    int size = process_args(argc, argv);
-    Timer t;
+    int size = process_args(argc, argv); // Convert KB to number of integers
+    zen::timer timer;
 
-    size_t data_size = size * sizeof(int);
-    int* aligned_data = static_cast<int*>(_aligned_malloc(data_size, 64));
 
-    if (!aligned_data) {
-        std::cerr << "Memory allocation failed" << std::endl;
-        return 1;
+    std::vector<int> data(size);
+    for(int i = 0; i < size; i++) {
+        data[i] = zen::random_int(0,size);
     }
 
-    // Initialize with random values
-    srand(static_cast<unsigned>(time(0))); // Seed for random numbers
-    for (int i = 0; i < size; ++i) {
-        aligned_data[i] = rand() % size; // Simple random number generation
-    }
-
-    std::vector<int> data(aligned_data, aligned_data + size);
-
-    t.start();
+    
+    timer.start();
     chunk_sort(data);
-    t.stop();
-    std::cout << "Chunk Sort Time: " << t.duration_ms() << " ms" << std::endl;
+    timer.stop();
+    std::cout << "Chunk Sort Time: " << timer.duration_string() << std::endl;
 
-    t.start();
+
+    data = std::vector<int>(size);
+    for(int i = 0; i < size; i++) {
+        data[i] = zen::random_int(0,size);
+    }
+    timer.start();
     merge_sort(data, 0, data.size() - 1, std::vector<int>(data.size()));
-    t.stop();
-    std::cout << "Standard Merge Sort Time: " << t.duration_ms() << " ms" << std::endl;
+    timer.stop();
+    std::cout << "Standard Merge Sort Time: " << timer.duration_string() << std::endl;
 
     std::cout << (std::is_sorted(data.begin(), data.end()) ? "Sorted!" : "Not Sorted!") << std::endl;
 
-    _aligned_free(aligned_data);
 
     return 0;
 }

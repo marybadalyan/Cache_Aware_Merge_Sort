@@ -1,60 +1,82 @@
-#ifndef CACHE_UTILS_H
-#define CACHE_UTILS_H
+#ifndef CACHE_INFO_H
+#define CACHE_INFO_H
 
-#include <iostream>
+#include <cstdint>
+
 #ifdef _WIN32
-#include <windows.h>
-#undef min // Prevent Windows macro from interfering with std::min
+#include <intrin.h>
 #else
-#include <cstdlib>
+#include <cpuid.h>
 #endif
 
-namespace cache_utils {
+namespace CacheDetector {
 
-inline int detectL1DataCacheSize() {
-    int l1DataSizeKB = 32; // Default fallback
-
+    // Cross-platform CPUID function
+    inline void getCpuid(uint32_t func, uint32_t& eax, uint32_t& ebx, uint32_t& ecx, uint32_t& edx) {
 #ifdef _WIN32
-    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION buffer = nullptr;
-    DWORD bufferSize = 0;
+        int regs[4];
+        __cpuid(regs, func);
+        eax = regs[0];
+        ebx = regs[1];
+        ecx = regs[2];
+        edx = regs[3];
+#else
+        __cpuid(func, eax, ebx, ecx, edx);
+#endif
+    }
 
-    if (GetLogicalProcessorInformation(buffer, &bufferSize) == FALSE && GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-        buffer = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)malloc(bufferSize);
-        if (buffer && GetLogicalProcessorInformation(buffer, &bufferSize)) {
-            PSYSTEM_LOGICAL_PROCESSOR_INFORMATION ptr = buffer;
-            DWORD byteOffset = 0;
-            while (byteOffset < bufferSize) {
-                if (ptr->Relationship == RelationCache && ptr->Cache.Type == CacheData && ptr->Cache.Level == 1) {
-                    std::cout << "L1 Data Cache Level: " << ptr->Cache.Level
-                              << ", Size: " << (ptr->Cache.Size / 1024) << " KB, Type: Data" << std::endl;
-                    l1DataSizeKB = ptr->Cache.Size / 1024;
-                    break;
-                }
-                byteOffset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
-                ptr++;
+    // Get L1 cache size in KB
+    inline uint32_t getL1CacheSize() {
+        uint32_t size = 0;
+        uint32_t eax, ebx, ecx, edx;
+
+        // First check CPUID leaf 2 (older method)
+        getCpuid(2, eax, ebx, ecx, edx);
+        
+        uint8_t* descriptors = reinterpret_cast<uint8_t*>(&eax);
+        for (int i = 0; i < 4; i++) {
+            if (descriptors[i] == 0x06) {  // L1 Instruction cache: 8KB
+                size = 8;
+                break;
+            }
+            else if (descriptors[i] == 0x08) {  // L1 Instruction cache: 16KB
+                size = 16;
+                break;
+            }
+            else if (descriptors[i] == 0x0A) {  // L1 Data cache: 8KB
+                size = 8;
+                break;
+            }
+            else if (descriptors[i] == 0x0C) {  // L1 Data cache: 16KB
+                size = 16;
+                break;
             }
         }
-        if (buffer) free(buffer);
+
+        // Try newer method with leaf 4 if leaf 2 didn't work
+        if (size == 0) {
+            for (uint32_t i = 0; i < 4; i++) {
+                getCpuid(0x4 | (i << 8), eax, ebx, ecx, edx);  // Corrected leaf 4 usage
+                
+                uint32_t cacheType = (eax & 0x1F);         // Cache type (1 = data, 3 = unified)
+                uint32_t cacheLevel = ((eax >> 5) & 0x7);  // Cache level
+                
+                if ((cacheType == 1 || cacheType == 3) && cacheLevel == 1) {  // L1 data or unified cache
+                    uint32_t ways = ((ebx >> 22) & 0x3FF) + 1;  // Ways of associativity
+                    uint32_t line = (ebx & 0xFFF) + 1;          // Cache line size in bytes
+                    uint32_t sets = ecx + 1;                    // Number of sets
+                    size = (ways * line * sets) / 1024;        // Total size in KB
+                    break;
+                }
+            }
+        }
+
+        return size;
     }
-    if (bufferSize == 0) {
-        std::cerr << "Failed to retrieve L1 data cache information. Using default 32 KB." << std::endl;
-    }
-#else
-    std::cout << "L1 data cache information retrieval not implemented for this platform. Using default 32 KB." << std::endl;
-#endif
 
-    return l1DataSizeKB;
-}
+    // Static constant for L1 cache size in KB
+    static const uint32_t CHUNK_SIZE = getL1CacheSize();
 
-inline int calculateChunkSize() {
-    int l1DataSizeKB = detectL1DataCacheSize();
-    int chunkSize = (l1DataSizeKB * 1024 / 4) / 8; // 1/8 of L1 data cache in integers (4-byte ints)
-    std::cout << "Calculated CHUNK_SIZE: " << chunkSize << " integers (based on " << l1DataSizeKB << " KB L1 data cache)" << std::endl;
-    return chunkSize > 0 ? chunkSize : 1024; // Ensure positive value, fallback to 1024
-}
+} // namespace CacheDetector
 
-const int CHUNK_SIZE = calculateChunkSize();
-
-} // namespace cache_utils
-
-#endif // CACHE_UTILS_H
+#endif // CACHE_INFO_H
