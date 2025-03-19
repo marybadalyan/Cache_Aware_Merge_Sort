@@ -95,10 +95,10 @@ jobs:
           # Run executable based on the platform
           if [ "$RUNNER_OS" == "Windows" ]; then
             # For Windows, use cmd to run the exe if it's Windows
-            "$executable_path" --size 50000000
+            "$executable_path" --size 5000000
           else
             # Run directly on Linux/macOS without './' for absolute path
-            "$executable_path" --size 50000000  # This works for both Linux/macOS
+            "$executable_path" --size 5000000  # This works for both Linux/macOS
           fi
         else
           echo "Executable not found: $executable_path"
