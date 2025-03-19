@@ -1,7 +1,7 @@
 
 //TODO: 1: Implement chunk sort to not increment the size of subvectors that ...
 //... need to be merged [do it with pairs] ✅
-//TODO: 2: Add run for git hub actions yaml file ❌
+//TODO: 2: Add run for git hub actions yaml file ✅
 //TODO: 3: Add iterations for accurate time measurement ✅
 //TODO: 4: Maybe use insertSort for chunk sorting or find a better way to sort the chunks without copy() ✅
 #include <iostream>
