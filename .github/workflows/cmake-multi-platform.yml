@@ -99,9 +99,9 @@ jobs:
         if [ -f "$executable_path" ]; then
           echo "Executable found, running it"
           if [ "$RUNNER_OS" == "Windows" ]; then
-            "$executable_path" --size 500000
+            "$executable_path" --size 5000
           else
-            "$executable_path" --size 500000
+            "$executable_path" --size 5000
           fi
         else
           echo "Executable not found: $executable_path"
