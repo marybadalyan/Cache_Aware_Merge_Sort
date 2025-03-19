@@ -55,7 +55,7 @@ jobs:
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
   test:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}  # Make sure this is using the matrix variable correctly
     needs: build  # Ensure that tests only run after the build job completes
     steps:
     - uses: actions/checkout@v4
@@ -71,7 +71,7 @@ jobs:
       run: ctest --build-config ${{ matrix.build_type }}
 
   run_executable:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}  # Make sure this is using the matrix variable correctly
     needs: test  # Ensure that executable run only happens after tests are completed
     steps:
     - uses: actions/checkout@v4
@@ -99,9 +99,9 @@ jobs:
         if [ -f "$executable_path" ]; then
           echo "Executable found, running it"
           if [ "$RUNNER_OS" == "Windows" ]; then
-            "$executable_path" --size 50000
+            "$executable_path" --size 500000
           else
-            "$executable_path" --size 50000
+            "$executable_path" --size 500000
           fi
         else
           echo "Executable not found: $executable_path"
