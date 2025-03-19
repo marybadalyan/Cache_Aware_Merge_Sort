@@ -9,6 +9,7 @@ using CacheDetector::CHUNK_SIZE;
 //... need to be merged [do it with pairs]
 //TODO: 2: Add run for git hub actions yaml file
 //TODO: 3: Add iterations for accurate time measurement
+//TODO: 4: Maybe use insertSort for chunk sorting or find a better way to sort the chunks without copy()
 int process_args(int argc, char* argv[]) {
     zen::print("The cache is " ,CHUNK_SIZE,"KB",'\n');
     zen::cmd_args args(argv, argc);
