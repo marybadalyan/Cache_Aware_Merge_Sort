@@ -8,6 +8,7 @@ using CacheDetector::CHUNK_SIZE;
 //TODO: 1: Implement chunk sort to not increment the size of subvectors that ...
 //... need to be merged [do it with pairs]
 //TODO: 2: Add run for git hub actions yaml file
+//TODO: 3: Add iterations for accurate time measurement
 int process_args(int argc, char* argv[]) {
     zen::print("The cache is " ,CHUNK_SIZE,"KB",'\n');
     zen::cmd_args args(argv, argc);
@@ -62,35 +63,33 @@ void chunk_sort(std::vector<int>& v) {
         size *= 2; //incerement the size of the chunks to be merged 
     }
 }
-
 int main(int argc, char* argv[]) {
-    int size = process_args(argc, argv); 
+    int size = process_args(argc, argv);
+    const int iterations = 10;  // Adjust as needed
     zen::timer timer;
+    double chunk_total = 0.0, merge_total = 0.0;
 
+    std::vector<int> data1(size), data2(size);
+    for (int iter = 0; iter < iterations; iter++) {
+        for (int i = 0; i < size; i++) {
+            data1[i] = data2[i] = zen::random_int(0, size);
+        }
 
-    std::vector<int> data(size);
-    for(int i = 0; i < size; i++) {
-        data[i] = zen::random_int(0,size);
+        timer.start();
+        chunk_sort(data1);
+        timer.stop();
+        chunk_total += timer.duration<zen::timer::nsec>().count();
+
+        std::vector<int> temp(size);
+        timer.start();
+        merge_sort(data2, 0, data2.size() - 1, temp);
+        timer.stop();
+        merge_total += timer.duration<zen::timer::nsec>().count();
     }
 
-    
-    timer.start();
-    chunk_sort(data);
-    timer.stop();
-    std::cout << "Chunk Sort Time: " << timer.duration_string() << std::endl;
+    std::cout << "Average Chunk Sort Time: " << (chunk_total / iterations) << " nsec" << std::endl;
+    std::cout << "Average Merge Sort Time: " << (merge_total / iterations) << " nsec" << std::endl;
 
-
-    data = std::vector<int>(size);
-    for(int i = 0; i < size; i++) {
-        data[i] = zen::random_int(0,size);
-    }
-    timer.start();
-    std::vector<int> temp(data.size());
-    merge_sort(data, 0, data.size() - 1, temp);
-    timer.stop();
-    std::cout << "Standard Merge Sort Time: " << timer.duration_string() << std::endl;
-
-    std::cout << (std::is_sorted(data.begin(), data.end()) ? "Sorted!" : "Not Sorted!") << std::endl;
 
 
     return 0;
