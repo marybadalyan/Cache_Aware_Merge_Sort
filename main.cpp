@@ -10,7 +10,7 @@ int process_args(int argc, char* argv[]) {
     zen::print("The cache is " ,CHUNK_SIZE,"KB",'\n');
     if (argc < 2) {
         std::cout << "Error: --size argument is absent, using default 1000!" << std::endl;
-        return 50000000; // Default size
+        return 50000; // Default size
     }
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "--size") {
@@ -19,7 +19,7 @@ int process_args(int argc, char* argv[]) {
             }
         }
     }
-    return 50000000;
+    return 50000;
 }
 
 void merge_sort(std::vector<int>& v, int left, int right, std::vector<int>& temp) {
