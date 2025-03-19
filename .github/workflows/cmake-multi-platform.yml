@@ -73,3 +73,29 @@ jobs:
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest --build-config ${{ matrix.build_type }}
+
+    - name: Run Executable
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      shell: bash
+      run: |
+        # Set executable name based on OS
+        executable="Cache_Aware_Merge_Sort"  # Start with base executable name
+        
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          executable="Cache_Aware_Merge_Sort.exe"  # Add .exe for Windows
+          # On Windows, we should ensure that we run in the correct directory
+          executable_path="${{ github.workspace }}\\build\\${{ matrix.build_type }}\\$executable"  # Absolute path for Windows
+        else
+          executable_path="${{ github.workspace }}/build/$executable"  # Absolute path for Linux/macOS
+        fi
+        
+        # Check if the file exists before trying to run it
+        echo "Checking if executable exists: $executable_path"
+        if [ -f "$executable_path" ]; then
+          echo "Executable found, running it"
+          # Run executable based on the platform
+          "$executable_path" --size 500  # This works for both Linux/macOS
+        else
+          echo "Executable not found: $executable_path"
+          exit 1  # Fail if the executable isn't found
+        fi
