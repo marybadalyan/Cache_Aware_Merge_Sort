@@ -123,9 +123,9 @@ int main(int argc, char* argv[]) {
 
     // Print table header
     std::cout << "\n";
-    std::cout << std::format("+{:-^{}}+{:-^{}}+\n", "", metric_width - 4 , "", value_width);
+    std::cout << std::format("+{:-^{}}+{:-^{}}+\n", "", metric_width - 2, "", value_width - 2);
     std::cout << std::format("|{:^{}}|{:^{}}|\n", "Metric", metric_width - 2, "Value", value_width - 2);
-    std::cout << std::format("+{:-^{}}+{:-^{}}+\n", "", metric_width - 4 , "", value_width);
+    std::cout << std::format("+{:-^{}}+{:-^{}}+\n", "", metric_width - 2, "", value_width - 2);
 
     // Print table rows
     std::cout << std::format("|{:^{}}|{:^{}}|\n", "Array Size", metric_width - 2, size, value_width - 2);
@@ -135,14 +135,14 @@ int main(int argc, char* argv[]) {
     std::cout << std::format("|{:^{}}|{:^{}}|\n", "Avg Merge Sort (ns)", metric_width - 2, static_cast<long long>(merge_total / iterations), value_width - 2);
 
     // Print table footer
-    std::cout << std::format("+{:-^{}}+{:-^{}}+\n", "", metric_width - 4, "", value_width);
+    std::cout << std::format("+{:-^{}}+{:-^{}}+\n", "", metric_width - 2, "", value_width - 2);
 
     // Speed comparison
     double speed_ratio = (merge_total > chunk_total) ? (merge_total / chunk_total) : (chunk_total / merge_total);
     const char* faster_algo = (merge_total > chunk_total) ? "Chunk Sort" : "Merge Sort";
     std::cout << std::format("|{:^{}}|{:^{}}|\n", "Faster Algorithm", metric_width - 2, faster_algo, value_width - 2);
     std::cout << std::format("|{:^{}}|{:^{}.5f}|\n", "Speedup Factor", metric_width - 2, speed_ratio, value_width - 2);
-    std::cout << std::format("+{:-^{}}+{:-^{}}+\n", "", metric_width - 4, "", value_width);
+    std::cout << std::format("+{:-^{}}+{:-^{}}+\n", "", metric_width - 2, "", value_width - 2);
 
     return 0;
 }
