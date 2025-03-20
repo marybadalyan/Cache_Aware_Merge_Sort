@@ -19,7 +19,8 @@ Merge sort is inherently cache-oblivious because it divides the problem into sma
   - Timing measurements (`zen::timer`)
   - Random number generation (`zen::random_int`)
  - **`cache_info.h`**: Header file for detecting L1 cache size using CPUID (optional).
-- Standard C++ libraries: `<iostream>`, `<vector>`, `<algorithm>`, `<iomanip>`.
+ - C++20 compatible compiler [support for `<format>` alternative use ```zen::print()```.
+ - Standard C++ libraries: `<iostream>`, `<vector>`, `<algorithm>`, `<iomanip>`, `<format>`.
 # Cache-Oblivious Merge Sort Implementation
 
 This project implements a cache-oblivious merge sort algorithm with chunk-based optimization, demonstrating how it naturally leverages cache locality while remaining oblivious to specific cache sizes. Optionally, it can use a cache-aware approach via the `cache_info.h` header to detect the L1 cache size dynamically. The implementation is written in C++ and uses the `kaizen.h` library for printing and argument parsing.
