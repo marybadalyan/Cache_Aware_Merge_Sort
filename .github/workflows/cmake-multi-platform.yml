@@ -94,7 +94,7 @@ jobs:
         if [ -f "$executable_path" ]; then
           echo "Executable found, running it"
           # Run executable based on the platform
-          "$executable_path" --size 500  # This works for both Linux/macOS
+          "$executable_path" --size 500  --iter 10 # This works for both Linux/macOS
         else
           echo "Executable not found: $executable_path"
           exit 1  # Fail if the executable isn't found

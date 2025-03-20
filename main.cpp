@@ -7,27 +7,29 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include "cache_size.h" 
+//#include "cache_size.h" 
 #include "kaizen.h"
 
-using CacheDetector::CHUNK_SIZE;
+size_t CHUNK_SIZE = 64; // using one cache line  as chunk size write using CacheDetector::CHUNK_SIZE; for L1 cache size
 
-int process_args(int argc, char* argv[]) {
-    zen::print("The cache is ", CHUNK_SIZE, "KB", '\n');
+std::pair<int,int> process_args(int argc, char* argv[]) {
     zen::cmd_args args(argv, argc);
     auto size_options = args.get_options("--size");
+    auto iter_options = args.get_options("--iter");
+
 
     if (size_options.empty()) {
         zen::log("Error: --size argument is absent, using default 500!");
-        return 500;
+        return {500, 20};
     }
     try {
         int size = std::stoi(size_options[0]);
-        if (size <= 0) throw std::out_of_range("Size must be positive");
-        return size;
+        int iter =  std::stoi(iter_options[0]);
+        if (size <= 0 || iter <= 0) throw std::out_of_range("Size must be positive");
+        return {size, iter};
     } catch (const std::exception& e) {
         zen::log("Error: Invalid size argument, using default 500!");
-        return 500;
+        return {500, 20};
     }
 }
 
@@ -62,15 +64,13 @@ void merge_sort(std::vector<int>& v, int left, int right, std::vector<int>& temp
 // Optimized chunk sort using merge sort throughout
 void chunk_sort(std::vector<int>& v, std::vector<int>& temp) {
     int n = v.size();
-    int chunk_size = std::max(1, static_cast<int>((CHUNK_SIZE * 1024) / sizeof(int)) / 2);
+    int chunk_size = std::max(1, static_cast<int>(CHUNK_SIZE / sizeof(int))); // 16 ints = 64 bytes
 
-    // Sort each chunk using merge sort
     for (int i = 0; i < n; i += chunk_size) {
         int end = std::min(i + chunk_size - 1, n - 1);
         merge_sort(v, i, end, temp);
     }
 
-    // Merge sorted chunks with increasing sizes
     for (int size = chunk_size; size < n; size *= 2) {
         for (int i = 0; i < n; i += 2 * size) {
             int mid = std::min(i + size - 1, n - 1);
@@ -82,9 +82,10 @@ void chunk_sort(std::vector<int>& v, std::vector<int>& temp) {
     }
 }
 
+
 int main(int argc, char* argv[]) {
-    int size = process_args(argc, argv);
-    const int iterations = 10;
+    auto [size,iterations] = process_args(argc, argv);
+
     zen::timer timer;
     
     // Single allocation for temporary space
@@ -116,8 +117,11 @@ int main(int argc, char* argv[]) {
         merge_total += timer.duration<zen::timer::nsec>().count();
     }
 
-    std::cout << "Average Chunk Sort Time: " << (chunk_total / iterations) << " nsec\n";
-    std::cout << "Average Merge Sort Time: " << (merge_total / iterations) << " nsec\n";
+    
+    zen::print("Sort correctness: ", std::is_sorted(data.begin(), data.end()) ? "Verified" : "Failed", "\n");
+    zen::print("Average Chunk Sort Time: " , (chunk_total / iterations) , " nsec\n");
+    zen::print("Average Chunk Sort Time: " , (merge_total / iterations) , " nsec\n");
+    (merge_total > chunk_total)? zen::print("Chunk Sort is ", (merge_total / chunk_total) , " times faster than Merge Sort\n") : zen::print("Chunk Sort is " ,(chunk_total / merge_total)  , " times faster than Merge Sort\n");
     
     return 0;
 }
