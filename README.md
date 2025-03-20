@@ -18,6 +18,7 @@ Merge sort is inherently cache-oblivious because it divides the problem into sma
   - Command-line argument parsing (`zen::cmd_args`)
   - Timing measurements (`zen::timer`)
   - Random number generation (`zen::random_int`)
+  - **`cache_info.h`**: Header file for detecting L1 cache size using CPUID (optional).
 - Standard C++ libraries: `<iostream>`, `<vector>`, `<algorithm>`, `<iomanip>`.
 # Cache-Oblivious Merge Sort Implementation
 
@@ -26,7 +27,10 @@ This project implements a cache-oblivious merge sort algorithm with chunk-based 
 ### Chunk Size Considerations
 - **Default (64 bytes)**: Matches a typical cache line size, leveraging hardware prefetching for sequential access. This works better than using the full L1 cache size in practice, likely due to prefetcher efficiency.
 - **Cache-Aware Option (`CacheDetector::CHUNK_SIZE`)**: Detects the L1 cache size (e.g., 32KB) using CPUID. While this makes the algorithm cache-aware, experiments show it yields less than a 0.1% performance improvement over the cache-oblivious 64-byte default. This suggests the cache-oblivious design is robust and prefetching compensates for larger chunk sizes.
-- 
+-**Notes on Integration**
+    - Conversion: CacheDetector::CHUNK_SIZE returns the L1 cache size in KB (e.g., 32KB). Multiply by 1024 to convert to bytes, then divide by sizeof(int) (typically 4) to get the number of integers. For a 32KB L1 cache, this yields 32 * 1024 / 4 = 8192 integers.
+    - Trade-Off: Using the full L1 cache size (e.g., 8192 integers) increases the working set significantly compared to 16 integers (64 bytes), which may reduce prefetching efficiency and increase cache misses. This explains why the 64-byte default often performs better.
+
 ### Why Chunk Size = Cache Line Size?
 - The chunk size is set to 64 bytes (one cache line) rather than the full L1 cache size (e.g., 32KB). This works better in practice, likely due to hardware prefetching, which anticipates sequential memory access within cache lines.
 - Using the full cache size as the chunk size could lead to more cache misses as the working set exceeds the cache line prefetching window.
