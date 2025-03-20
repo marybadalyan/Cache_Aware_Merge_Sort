@@ -79,10 +79,10 @@ jobs:
       shell: bash
       run: |
         # Set executable name based on OS
-        executable="Cache_Aware_Merge_Sort"  # Start with base executable name
+        executable="Cache_Aware_Oblivious_Merge_Sort"  # Start with base executable name
         
         if [ "$RUNNER_OS" == "Windows" ]; then
-          executable="Cache_Aware_Merge_Sort.exe"  # Add .exe for Windows
+          executable="Cache_Aware_Oblivious_Merge_Sort.exe"  # Add .exe for Windows
           # On Windows, we should ensure that we run in the correct directory
           executable_path="${{ github.workspace }}\\build\\${{ matrix.build_type }}\\$executable"  # Absolute path for Windows
         else
