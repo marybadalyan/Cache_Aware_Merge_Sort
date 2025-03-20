@@ -9,7 +9,8 @@
 #include <algorithm>
 //#include "cache_size.h" 
 #include "kaizen.h"
-
+#include <iomanip>
+#include <format>
 size_t CHUNK_SIZE = 64; // using one cache line  as chunk size write using CacheDetector::CHUNK_SIZE; for L1 cache size
 
 std::pair<int,int> process_args(int argc, char* argv[]) {
@@ -82,16 +83,16 @@ void chunk_sort(std::vector<int>& v, std::vector<int>& temp) {
     }
 }
 
-
 int main(int argc, char* argv[]) {
-    auto [size,iterations] = process_args(argc, argv);
-
+    auto [size, iterations] = process_args(argc, argv);
     zen::timer timer;
-    
-    // Single allocation for temporary space
+
+    // Print chunk size using std::cout and std::format
+    std::cout << std::format("Using chunk size: {} bytes ({} integers)\n", CHUNK_SIZE * sizeof(int), CHUNK_SIZE);
+
     std::vector<int> data(size), original(size), temp(size);
 
-    // Warm-up run to prime caches
+    // Warm-up run
     for (int i = 0; i < size; i++) {
         original[i] = zen::random_int(0, size);
     }
@@ -100,16 +101,13 @@ int main(int argc, char* argv[]) {
 
     // Performance measurement
     double chunk_total = 0.0, merge_total = 0.0;
-    
     for (int iter = 0; iter < iterations; iter++) {
-        // Test chunk sort
         data = original;
         timer.start();
         chunk_sort(data, temp);
         timer.stop();
         chunk_total += timer.duration<zen::timer::nsec>().count();
 
-        // Test standard merge sort
         data = original;
         timer.start();
         merge_sort(data, 0, size - 1, temp);
@@ -117,11 +115,34 @@ int main(int argc, char* argv[]) {
         merge_total += timer.duration<zen::timer::nsec>().count();
     }
 
-    
-    zen::print("Sort correctness: ", std::is_sorted(data.begin(), data.end()) ? "Verified" : "Failed", "\n");
-    zen::print("Average Chunk Sort Time: " , (chunk_total / iterations) , " nsec\n");
-    zen::print("Average Chunk Sort Time: " , (merge_total / iterations) , " nsec\n");
-    (merge_total > chunk_total)? zen::print("Chunk Sort is ", (merge_total / chunk_total) , " times faster than Merge Sort\n") : zen::print("Chunk Sort is " ,(chunk_total / merge_total)  , " times faster than Merge Sort\n");
-    
+    bool is_correct = std::is_sorted(data.begin(), data.end());
+
+    // Table output using std::cout and std::format with centered alignment
+    const int metric_width = 25;  // Width for the "Metric" column
+    const int value_width = 15;   // Width for the "Value" column
+
+    // Print table header
+    std::cout << "\n";
+    std::cout << std::format("+{:-^{}}+{:-^{}}+\n", "", metric_width - 4 , "", value_width);
+    std::cout << std::format("|{:^{}}|{:^{}}|\n", "Metric", metric_width - 2, "Value", value_width - 2);
+    std::cout << std::format("+{:-^{}}+{:-^{}}+\n", "", metric_width - 4 , "", value_width);
+
+    // Print table rows
+    std::cout << std::format("|{:^{}}|{:^{}}|\n", "Array Size", metric_width - 2, size, value_width - 2);
+    std::cout << std::format("|{:^{}}|{:^{}}|\n", "Iterations", metric_width - 2, iterations, value_width - 2);
+    std::cout << std::format("|{:^{}}|{:^{}}|\n", "Sort Correctness", metric_width - 2, (is_correct ? "Verified" : "Failed"), value_width - 2);
+    std::cout << std::format("|{:^{}}|{:^{}}|\n", "Avg Chunk Sort (ns)", metric_width - 2, static_cast<long long>(chunk_total / iterations), value_width - 2);
+    std::cout << std::format("|{:^{}}|{:^{}}|\n", "Avg Merge Sort (ns)", metric_width - 2, static_cast<long long>(merge_total / iterations), value_width - 2);
+
+    // Print table footer
+    std::cout << std::format("+{:-^{}}+{:-^{}}+\n", "", metric_width - 4, "", value_width);
+
+    // Speed comparison
+    double speed_ratio = (merge_total > chunk_total) ? (merge_total / chunk_total) : (chunk_total / merge_total);
+    const char* faster_algo = (merge_total > chunk_total) ? "Chunk Sort" : "Merge Sort";
+    std::cout << std::format("|{:^{}}|{:^{}}|\n", "Faster Algorithm", metric_width - 2, faster_algo, value_width - 2);
+    std::cout << std::format("|{:^{}}|{:^{}.5f}|\n", "Speedup Factor", metric_width - 2, speed_ratio, value_width - 2);
+    std::cout << std::format("+{:-^{}}+{:-^{}}+\n", "", metric_width - 4, "", value_width);
+
     return 0;
 }
